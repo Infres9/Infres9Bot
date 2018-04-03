@@ -77,6 +77,7 @@ que le paris a bien été pris en compte`;
         
         let winners = [`Résultats (${toReadableTime(betState.starting)}):`];
         let mentions = [];
+        console.log(betState.players);
         Object.keys(betState.players).map(k => {
             let time = betState.players[k].bet;
             let tag = "@" + (betState.players[k].name || "Unknown");
@@ -118,7 +119,7 @@ que le paris a bien été pris en compte`;
             if(!nicknames[senderId]){
                 return this.api.getUserInfo(senderId, (err, userData) => {
                     if(err)return console.error(err);
-                    betState.players[senderId] = (userData[senderId]||{}).name || "Inconnu";
+                    betState.players[senderId].name = (userData[senderId]||{}).name || "Inconnu";
                     return this.api.setMessageReaction(':like:', message.messageID);
                 });
             }

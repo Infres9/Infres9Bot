@@ -1,11 +1,13 @@
 
 const login = require("facebook-chat-api");
 const BetService = require('./src/BetService');
-const config = require('./config');
-
 const services = {};
 
-login({email: config.FACEBOOK_MAIL, password: config.FACEBOOK_PWD}, (err,api) => {
+if(!process.env.FACEBOOK_MAIL || !process.env.FACEBOOK_PWD){
+    return console.error("Please, set FACEBOOK_MAIL && FACEBOO_PWD environment variables");
+}
+
+login({email: process.env.FACEBOOK_MAIL, password: process.env.FACEBOOK_PWD}, (err,api) => {
     if(err) return console.error(err);
 
     services["bet"] = new BetService(api);
