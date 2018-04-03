@@ -4,11 +4,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc",
+    "dev" : "npm run build  && node dist/index.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/node": "^9.6.1",
     "facebook-chat-api": "^1.5.0"
   }
 }
