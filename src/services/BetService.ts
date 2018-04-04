@@ -1,11 +1,13 @@
 import Service from './Service';
+import {Reaction} from '../Enums'
+import {FacebookChatApi, Mention, SentMessage} from '../FacebookChatApi'
 
 export default class BetService implements Service{
 
     private bets : {};
-    private api : any;
+    private api : FacebookChatApi;
 
-    constructor(api : any){
+    constructor(api : FacebookChatApi){
         this.bets = {};
         this.api = api;
     }
@@ -50,7 +52,7 @@ export default class BetService implements Service{
         return `${date.getHours()}h${minutesStr}`;
     }
 
-    private sendMessage(str : string|{}, threadId : number) : void{
+    private sendMessage(str : string|SentMessage, threadId : string) : void{
         return this.api.sendMessage(str, threadId);
     }
 
@@ -104,7 +106,7 @@ que le paris a bien été pris en compte`;
         let stats = ["Statistiques :", ...
             Object.keys(players)
                 .map(p => ({id : p, name : players[p].name, bet : players[p].bet}))
-                .sort((a,b) => this.distFrom(a.bet, betState.starting) - this.distFrom(b.bet, betState.startging) )
+                .sort((a,b) => this.distFrom(a.bet, betState.starting) - this.distFrom(b.bet, betState.starting) )
                 .map(p => `${p.name} => ${this.toReadableTime(p.bet)}`)
         ];
         this.sendMessage(stats.join('\n'), message.threadID);
@@ -119,7 +121,7 @@ que le paris a bien été pris en compte`;
              return false;
         }
 
-        let mentions = [];
+        let mentions : Mention[] = [];
         let winners = [`Résultats (${this.toReadableTime(endTime)}):`,...        
             Object.keys(betState.players).map(k => {
                 let data = betState.players[k];
@@ -173,12 +175,12 @@ que le paris a bien été pris en compte`;
                 return this.api.getUserInfo(senderId, (err, userData) => {
                     if(err)return console.error(err);
                     betState.players[senderId].name = (userData[senderId]||{}).name || "Inconnu";
-                    return this.api.setMessageReaction(':like:', message.messageID);
+                    return this.api.setMessageReaction(Reaction.Like, message.messageID);
                 });
             }
 
             betState.players[senderId].name = nicknames[senderId];
-            return this.api.setMessageReaction(':like:', message.messageID);
+            return this.api.setMessageReaction(Reaction.Like, message.messageID);
         });
     }
 }

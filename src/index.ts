@@ -2,15 +2,17 @@
 import * as login from 'facebook-chat-api';
 import BetService from './services/BetService';
 import Service from './services/Service';
+import {MessageType} from './Enums';
+import {FacebookChatApi, ListenInfo} from './FacebookChatApi';
 
-const services  = {};
+const services : {[key : string] : Service}  = {};
 
 if(!process.env.FACEBOOK_MAIL || !process.env.FACEBOOK_PWD){
-    console.error("Please, set FACEBOOK_MAIL && FACEBOO_PWD environment variables");
+    console.error("Please, set FACEBOOK_MAIL && FACEBOOK_PWD environment variables");
     process.exit(-1);
 }
 
-login({email: process.env.FACEBOOK_MAIL, password: process.env.FACEBOOK_PWD}, (err,api) => {
+login({email: process.env.FACEBOOK_MAIL, password: process.env.FACEBOOK_PWD}, (err,api : FacebookChatApi) => {
     if(err) return console.error(err);
 
     services["bet"] = new BetService(api);
@@ -42,17 +44,21 @@ function handleReactionSent(message){
     //later :)
 }
 
-function receiveMessage(err, message){
+function receiveMessage(err, message : ListenInfo){
     if(err)return console.error(err);
+    message.type
 
     try{
         switch(message.type){
-            case "message":return handleMessageSent(message);
-            case "message_reaction":return handleReactionSent(message);
+            case MessageType.Message : return handleMessageSent(message);
+            case MessageType.MessageReaction : return handleReactionSent(message);
             default:break;
         }
     }catch(ex){
-        console.error("Failed to execute command " + message.body);
+        console.error("Failed to execute command " + message.type);
+        if(message.type == MessageType.Message){
+            console.error(message.body);
+        }
         console.error(ex);
     }
 }

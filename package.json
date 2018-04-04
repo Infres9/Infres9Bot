@@ -5,12 +5,13 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
-    "dev" : "npm run build  && node dist/index.js"
+    "dev": "npm run build  && node dist/index.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@types/node": "^9.6.1",
-    "facebook-chat-api": "^1.5.0"
+    "facebook-chat-api": "^1.5.0",
+    "lowdb": "^1.0.0"
   }
 }
