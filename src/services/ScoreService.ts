@@ -1,29 +1,50 @@
 
 import * as lowdb from 'lowdb';
-import FileAdapter from 'lowdb/adapters/FileSync';
+import * as FileAdapter from 'lowdb/adapters/FileSync';
 
-export default class ScoreService{
+interface ThreadScore{
+    [key : string] : {[key : string] : number}
+}
+
+interface ServiceData{
+    version : string,
+    threads : ThreadScore
+}
+
+export class ScoreService{
 
     private db : any;
-    private scores : {};
+    private scores : ServiceData;
 
     constructor(){
-        const adapter = FileAdapter("db.json");
+        const adapter = new FileAdapter("db.json");
         this.db = lowdb(adapter);
-        this.db.defaults({version : '1.0', 'threads' : this.scores})
+        this.db.defaults({version : '1.0', 'threads' : {}})
                 .write();
+        this.scores = {
+            version : this.db.get('version').value(),
+            threads : this.db.get('threads').value()
+        };
     }
 
-    public incrementscore(threadId : string, userId : string) : void{
-        if(!this.scores[threadId]){
-            this.scores[threadId] = {};
+    public getScores(threadId : string) : {[key: string] : number}{
+        return this.scores.threads[threadId] || {};
+    }
+
+    public incrementscore(threadId : string, userId : string, increment : number = 1) : number{
+        let scores = this.scores.threads;
+        if(!scores[threadId]){
+            scores[threadId] = {};
         }
 
-        if(!this.scores[threadId][userId]){
-            this.scores[threadId][userId] = 0;
+        if(!scores[threadId][userId]){
+            scores[threadId][userId] = 0;
         }
-        this.scores[threadId][userId]++;
+        return scores[threadId][userId] += increment;
+    }
 
+    public flush() : void{
+        this.db.set('threads', this.scores.threads).write();
     }
 
 }

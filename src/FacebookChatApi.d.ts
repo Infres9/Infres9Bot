@@ -231,11 +231,11 @@ type ListenInfo = MessageInfo | EventInfo | TypInfo | ReadInfo | ReadReceiptInfo
 
 interface FacebookChatApi{
 
-    addUserToGroup(userId : number, threadId : number, callback? : (err) => {});
+    addUserToGroup(userId : string, threadId : string, callback? : (err) => any);
 
-    getThreadInfo(threadId : number, callback? : (err,info : ThreadInfo) => {});
+    getThreadInfo(threadId : string, callback? : (err,info : ThreadInfo) => any);
 
-    getUserInfo(userId : number|number[], callback?)
+    getUserInfo(userId : string|string[], callback? : (err, info :UserInfo) => any);
 
     listen(callback : (err, info : ListenInfo) => void);
 

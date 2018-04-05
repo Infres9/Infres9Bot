@@ -3,7 +3,7 @@ import * as login from 'facebook-chat-api';
 import BetService from './services/BetService';
 import Service from './services/Service';
 import {MessageType} from './Enums';
-import {FacebookChatApi, ListenInfo} from './FacebookChatApi';
+import {FacebookChatApi, ListenInfo, EventInfo, MessageReactionInfo, MessageInfo} from './FacebookChatApi';
 
 const services : {[key : string] : Service}  = {};
 
@@ -20,7 +20,7 @@ login({email: process.env.FACEBOOK_MAIL, password: process.env.FACEBOOK_PWD}, (e
 });
 
 
-function handleMessageSent(message){
+function handleMessageSent(message : MessageInfo){
     let cleaned = message.body.replace(/\s+/g,' ');
     let splited = cleaned.split(' ');
     let firstChar = cleaned[0];
@@ -40,8 +40,12 @@ function handleMessageSent(message){
     return commands[secondWord].call(service, message);
 }
 
-function handleReactionSent(message){
+function handleReactionSent(message : MessageReactionInfo){
     //later :)
+}
+
+function handleEvent(message : EventInfo){
+    
 }
 
 function receiveMessage(err, message : ListenInfo){
@@ -52,6 +56,7 @@ function receiveMessage(err, message : ListenInfo){
         switch(message.type){
             case MessageType.Message : return handleMessageSent(message);
             case MessageType.MessageReaction : return handleReactionSent(message);
+            case MessageType.Event : return handleEvent(message);
             default:break;
         }
     }catch(ex){

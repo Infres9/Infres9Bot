@@ -1,25 +1,34 @@
 import Service from './Service';
 import {Reaction} from '../Enums'
-import {FacebookChatApi, Mention, SentMessage} from '../FacebookChatApi'
+import {FacebookChatApi, Mention, SentMessage, EventInfo, MessageReactionInfo, MessageInfo} from '../FacebookChatApi'
+import {ScoreService}  from './ScoreService';
+import {UserService} from './UserService';
 
 export default class BetService implements Service{
 
     private bets : {};
-    private api : FacebookChatApi;
+    private scores : ScoreService;
+    private nicknames : UserService
 
-    constructor(api : FacebookChatApi){
+    constructor(private api : FacebookChatApi){
         this.bets = {};
         this.api = api;
+        this.scores = new ScoreService();
+        this.nicknames = new UserService(api);
+    }
+    
+    public events() : {[key : string] : (info : EventInfo) => boolean}{
+        return {};
     }
 
-    public reactions() : {[key : string] : (any) => boolean}{
+    public reactions() : {[key : string] : (info  : MessageReactionInfo) => boolean}{
         return {};
     }
 
     /**
      * list all the possible function that can be calle
      */
-    public commands() : {[key : string] : (any) => boolean}{
+    public commands() : {[key : string] : (info : MessageInfo) => boolean}{
         return {"start" : this.start, 
                 "help" :  this.help,
                 "finish" : this.finish,
@@ -27,7 +36,10 @@ export default class BetService implements Service{
                 "end" : this.finish,
                 "stats" : this.stats,
                 "do" : this.doBet,
-                "bet" : this.doBet};
+                "bet" : this.doBet,
+                "scores" : this.palmares,
+                "palmares" : this.palmares,
+            };
     }
 
     private toRank(rank : number) : string{
@@ -46,8 +58,15 @@ export default class BetService implements Service{
         return str.split(/h/ig).map(x=>+x);
     }
 
+    private toReadableMinutes(date : Date) : string{
+        let seconds = date.getSeconds();
+        let secondsStr = seconds < 10 ? "0" + seconds : "" + seconds;
+        return `${date.getMinutes()}:${secondsStr}`;
+    }
+
     private toReadableTime(date : Date) : string{
         let minutes : number = date.getMinutes();
+        let seconds = date.getSeconds();
         let minutesStr = minutes < 10 ? "0" + minutes : "" + minutes;
         return `${date.getHours()}h${minutesStr}`;
     }
@@ -60,7 +79,7 @@ export default class BetService implements Service{
         return Math.abs(dateBase.getTime() - dateTest.getTime());
     }
 
-    public start(message) : boolean{
+    public start(message : MessageInfo) : boolean{
         let betState = this.bets[message.threadID];
         if(betState){
             this.sendMessage("Les paris ont déjà commmencés !", message.threadID);
@@ -72,8 +91,10 @@ export default class BetService implements Service{
         
         this.sendMessage("Les paris sont ouverts vous avez 2 minutes pour parier !", message.threadID);
         setTimeout(() => {
-            this.sendMessage("Fin des paris", message.threadID);
-            this.bets[message.threadID].finished = true;
+            if(this.bets[message.threadID]){
+                this.sendMessage("Fin des paris", message.threadID);
+                this.bets[message.threadID].finished = true;
+            }
         }, 2/*minutes*/ * 60/*seconds*/ * 1000/*ms*/);
         return true;
     }
@@ -90,7 +111,24 @@ que le paris a bien été pris en compte`;
         return true;
     }
 
-    public stats(message) : boolean{
+    public palmares(message) : boolean{
+        let scores = this.scores.getScores(message.threadID);
+
+        this.nicknames.getUserNames(message.threadID, Object.keys(scores))
+                    .then(names => {
+                        let palmares = ["Palmares :", ...
+                            Object.keys(names)
+                            .map(k => ({name : names[k], score : scores[k]}))
+                            .sort((a,b) => b.score - a.score)
+                            .map((k,i) => `${this.toRank(i+1)}- ${k.name} (${this.toPoints(k.score)})`)
+                        ];
+                        this.sendMessage(palmares.join("\n"), message.threadID);
+                    })
+                    .catch(err => console.error(err));
+        return true;
+    }
+
+    public stats(message : MessageInfo) : boolean{
         let betState = this.bets[message.threadID];
         if(!betState){
             this.sendMessage("Les paris n'ont pas commencé", message.threadID);
@@ -113,32 +151,39 @@ que le paris a bien été pris en compte`;
         return true;
     }
 
-    public finish(message) : boolean{
+    public finish(message : MessageInfo) : boolean{
         let endTime = new Date();
         let betState = this.bets[message.threadID];
         if(!betState){
-             this.sendMessage("Les paris n'ont pas commencé", message.threadId);
+             this.sendMessage("Les paris n'ont pas commencé", message.threadID);
              return false;
         }
 
         let mentions : Mention[] = [];
-        let winners = [`Résultats (${this.toReadableTime(endTime)}):`,...        
+        let timeGap = new Date(endTime.getTime() - betState.starting.getTime());
+        let formattedTime = this.toReadableMinutes(timeGap);
+
+        let winners = [`Résultats (${this.toReadableTime(betState.starting)}-${this.toReadableTime(endTime)} : ${formattedTime}):`,...        
             Object.keys(betState.players).map(k => {
                 let data = betState.players[k];
-                let tag = "@" + (data.name || "Unknown");
+                let tag = `@${data.name}`;
                 mentions.push({tag : tag, id : k});
                 return {id : k, name : data.name, bet : data.bet, score : this.distFrom(data.bet, endTime)};
             })
             .sort((a,b) => a.score - b.score)
-            .map((p,i, arr) => `${this.toRank(i+1)}- @${p.name} (${this.toReadableTime(p.bet)}) : ${this.toPoints(arr.length - i)}`)
+            .map((p,i, arr) => {
+                this.scores.incrementscore(message.threadID, p.id, arr.length - i);
+                return `${this.toRank(i+1)}- @${p.name} (${this.toReadableTime(p.bet)}) : ${this.toPoints(arr.length - i)}`
+            })
         ];
+        this.scores.flush();
 
         this.sendMessage({body : winners.join('\n'), mentions : mentions}, message.threadID);
 
         return (delete this.bets[message.threadID]);
     }
 
-    public doBet(message) : boolean{
+    public doBet(message : MessageInfo) : boolean{
         let betState = this.bets[message.threadID];
         if(!betState){
             this.sendMessage("Les paris ne sont pas ouverts!", message.threadID);
@@ -168,19 +213,12 @@ que le paris a bien été pris en compte`;
 
         betState.players[senderId] = betState.players[senderId] || {};
         betState.players[senderId].bet = betTime;
-        return this.api.getThreadInfo(message.threadID, (err, ret) => {
-            if(err)return console.error(err);
-            let nicknames = ret.nicknames || {};
-            if(!nicknames[senderId]){
-                return this.api.getUserInfo(senderId, (err, userData) => {
-                    if(err)return console.error(err);
-                    betState.players[senderId].name = (userData[senderId]||{}).name || "Inconnu";
-                    return this.api.setMessageReaction(Reaction.Like, message.messageID);
-                });
-            }
-
-            betState.players[senderId].name = nicknames[senderId];
-            return this.api.setMessageReaction(Reaction.Like, message.messageID);
-        });
+        this.nicknames.getUserName(message.threadID, message.senderID)
+                        .then(s => {
+                            betState.players[senderId].name = s;
+                            this.api.setMessageReaction(Reaction.Like, message.messageID);
+                        })
+                        .catch(ex => console.error(ex));
+        return true;
     }
 }
