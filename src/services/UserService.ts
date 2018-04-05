@@ -16,6 +16,11 @@ export class UserService{
         this.threads = {};
     }
 
+    public updateUserNickname(threadID : string, userId : string, nwNickname : string){
+        if(!this.threads[threadID])this.threads[threadID] = {};
+        this.threads[threadID][userId] = nwNickname;
+    }
+
     public async getUserNames(threadID : string, userIds : string[]) : Promise<{[key : string] : string}>{
         if(!this.threads[threadID]) {//get nicknames
             let thInfo = await this.threadInfoPromise(threadID);
@@ -43,18 +48,6 @@ export class UserService{
         }
         
         return new Promise<string>(solver => solver(this.threads[threadID][userId]));
-    }
-
-    public async updateUserNames(threadID : string) : Promise<void>{
-            const infos : ThreadInfo = await this.threadInfoPromise(threadID);
-            this.threads[threadID] = infos.nicknames;
-    }
-
-
-    public userName(threadID : string, userID : string) : string{
-        if(!this.threads[threadID])return "Unkown thread";
-        if(!this.threads[threadID][userID])return "Unkown user";
-        return this.threads[threadID][userID];
     }
 
     private threadInfoPromise(threadID : string) : Promise<ThreadInfo>{

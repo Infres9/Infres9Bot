@@ -15,6 +15,7 @@ if(!process.env.FACEBOOK_MAIL || !process.env.FACEBOOK_PWD){
 login({email: process.env.FACEBOOK_MAIL, password: process.env.FACEBOOK_PWD}, (err,api : FacebookChatApi) => {
     if(err) return console.error(err);
 
+    api.setOptions({listenEvents : true, selfListen : true});
     services["bet"] = new BetService(api);
     api.listen(receiveMessage);
 });
@@ -41,17 +42,17 @@ function handleMessageSent(message : MessageInfo){
 }
 
 function handleReactionSent(message : MessageReactionInfo){
-    //later :)
+    Object.keys(services).map(k => services[k].reactions(message));
+
 }
 
 function handleEvent(message : EventInfo){
-    
+    Object.keys(services).map(k => services[k].events(message));
 }
 
 function receiveMessage(err, message : ListenInfo){
     if(err)return console.error(err);
-    message.type
-
+    
     try{
         switch(message.type){
             case MessageType.Message : return handleMessageSent(message);

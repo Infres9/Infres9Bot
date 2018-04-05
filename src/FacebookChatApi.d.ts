@@ -163,8 +163,8 @@ interface EventInfo{
     type : MessageType.Event,
     author : string,
     logMessageBody : string,
-    logMessageData : string,
-    logMessateType : LogMessateType,
+    logMessageData : any,
+    logMessageType : LogMessateType,
     threadID : string,
 }
 

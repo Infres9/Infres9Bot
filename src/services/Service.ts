@@ -4,7 +4,7 @@ export default interface Service{
 
     commands() :{[key : string] : (info : MessageInfo) => boolean};
 
-    reactions() : {[key : string] : (info : MessageReactionInfo) => boolean};
+    reactions(reaction : MessageReactionInfo) : any;
 
-    events() : {[key : string] : (info : EventInfo) => boolean};
+    events(event : EventInfo) : any;
 }

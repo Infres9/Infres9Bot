@@ -1,5 +1,5 @@
 import Service from './Service';
-import {Reaction} from '../Enums'
+import {Reaction, LogMessateType} from '../Enums'
 import {FacebookChatApi, Mention, SentMessage, EventInfo, MessageReactionInfo, MessageInfo} from '../FacebookChatApi'
 import {ScoreService}  from './ScoreService';
 import {UserService} from './UserService';
@@ -17,11 +17,13 @@ export default class BetService implements Service{
         this.nicknames = new UserService(api);
     }
     
-    public events() : {[key : string] : (info : EventInfo) => boolean}{
-        return {};
+    public events(event : EventInfo) : any{
+        if(event.logMessageType == LogMessateType.UserNickname){
+            this.nicknames.updateUserNickname(event.threadID, event.logMessageData.participant_id, event.logMessageData.nickname);
+        }
     }
 
-    public reactions() : {[key : string] : (info  : MessageReactionInfo) => boolean}{
+    public reactions(reaction : MessageReactionInfo) : any{
         return {};
     }
 
@@ -29,7 +31,8 @@ export default class BetService implements Service{
      * list all the possible function that can be calle
      */
     public commands() : {[key : string] : (info : MessageInfo) => boolean}{
-        return {"start" : this.start, 
+        return {"start" : this.start,
+                "begin" : this.start,
                 "help" :  this.help,
                 "finish" : this.finish,
                 "stop" : this.finish,
