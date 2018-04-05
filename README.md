@@ -22,6 +22,7 @@ So let's take an example to see how to use this betting system. Say one goes som
 
 Have fun !
 
+run with : ``npm run dev``
 
 Credits
 -------
