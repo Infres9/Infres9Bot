@@ -27,10 +27,10 @@ export class UserService{
             this.threads[threadID] = thInfo.nicknames;
         }
         let res  = {};
+        let names = await this.usersInfosPromise(userIds);
         for(let id of userIds){
             if(!this.threads[threadID][id]){
-                let userInfo = await this.userInfoPromise(id);
-                this.threads[threadID][id] = userInfo.name;
+                this.threads[threadID][id] = names[id].name;
             }
             res[id] = this.threads[threadID][id];
         }
@@ -44,6 +44,7 @@ export class UserService{
         }
         if(!this.threads[threadID][userId]){//get name
             let userInfo = await this.userInfoPromise(userId);
+            console.log(userInfo);
             this.threads[threadID][userId] = userInfo.name;
         }
         
@@ -56,9 +57,15 @@ export class UserService{
         });
     }
 
+    private usersInfosPromise(userIds : string[]) : Promise<{[key : string] : UserInfo}>{
+        return new Promise(solver => {
+            this.api.getUserInfo(userIds, (err,info) => solver(info));
+        });
+    }
+
     private userInfoPromise(userId : string) : Promise<UserInfo>{
         return new Promise(solver => {
-            this.api.getUserInfo(userId, (err,info) => solver(info))
+            this.api.getUserInfo(userId, (err,info) => solver(info[userId]))
         });
     }
 }

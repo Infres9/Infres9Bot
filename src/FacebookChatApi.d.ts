@@ -235,7 +235,7 @@ interface FacebookChatApi{
 
     getThreadInfo(threadId : string, callback? : (err,info : ThreadInfo) => any);
 
-    getUserInfo(userId : string|string[], callback? : (err, info :UserInfo) => any);
+    getUserInfo(userId : string|string[], callback? : (err, info : {[key:string] :UserInfo}) => any);
 
     listen(callback : (err, info : ListenInfo) => void);
 
