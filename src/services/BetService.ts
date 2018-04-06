@@ -1,6 +1,6 @@
 import Service from './Service';
 import {Reaction, LogMessateType} from '../Enums'
-import {FacebookChatApi, Mention, SentMessage, EventInfo, MessageReactionInfo, MessageInfo} from '../FacebookChatApi'
+import {FacebookChatApi, Mention, SentMessage, EventInfo, MessageReactionInfo, MessageInfo, SentMessageInfo} from '../FacebookChatApi'
 import {ScoreService}  from './ScoreService';
 import {UserService} from './UserService';
 
@@ -30,7 +30,7 @@ export default class BetService implements Service{
     /**
      * list all the possible function that can be calle
      */
-    public commands() : {[key : string] : (info : MessageInfo) => boolean}{
+    public commands() : {[key : string] : (info : MessageInfo) => Promise<boolean>}{
         return {"start" : this.start,
                 "begin" : this.start,
                 "help" :  this.help,
@@ -74,25 +74,27 @@ export default class BetService implements Service{
         return `${date.getHours()}h${minutesStr}`;
     }
 
-    private sendMessage(str : string|SentMessage, threadId : string) : void{
-        return this.api.sendMessage(str, threadId);
+    private sendMessage(str : string|SentMessage, threadId : string) : Promise<SentMessageInfo>{
+        return new Promise(solver =>{
+            return this.api.sendMessage(str, threadId,(err, info) => solver(info) ); 
+        });
     }
 
     private distFrom(dateBase : Date, dateTest : Date) : number{
         return Math.abs(dateBase.getTime() - dateTest.getTime());
     }
 
-    public start(message : MessageInfo) : boolean{
+    public async start(message : MessageInfo) : Promise<boolean>{
         let betState = this.bets[message.threadID];
         if(betState){
-            this.sendMessage("Les paris ont déjà commmencés !", message.threadID);
+            await this.sendMessage("Les paris ont déjà commmencés !", message.threadID);
             return false;
         }
 
         var time = new Date();
         this.bets[message.threadID] =  {starting : time, players : {}, finished : false};
         
-        this.sendMessage("Les paris sont ouverts vous avez 2 minutes pour parier !", message.threadID);
+        await this.sendMessage("Les paris sont ouverts vous avez 2 minutes pour parier !", message.threadID);
         setTimeout(() => {
             if(this.bets[message.threadID]){
                 this.sendMessage("Fin des paris", message.threadID);
@@ -102,7 +104,7 @@ export default class BetService implements Service{
         return true;
     }
 
-    public help(message) : boolean{
+    public async help(message) : Promise<boolean>{
         let helpMessage = `Gestionnaire de paris
 Pariez avec la commande '/bet do {time}'
 'Time' peut être le nombre de minutes depuis le lancement du paris
@@ -110,37 +112,34 @@ Ou une heure exacte (10h11) par ex.
 Si le format du paris n'est pas bon, vous en êtes informés
 Sinon, le bot mettra un pouce sur votre message pour indiquer
 que le paris a bien été pris en compte`;
-        this.sendMessage(helpMessage, message.threadID);
+        await this.sendMessage(helpMessage, message.threadID);
         return true;
     }
 
-    public palmares(message) : boolean{
+    public async palmares(message) : Promise<boolean>{
         let scores = this.scores.getScores(message.threadID);
 
-        this.nicknames.getUserNames(message.threadID, Object.keys(scores))
-                    .then(names => {
-                        let palmares = ["Palmares :", ...
-                            Object.keys(names)
-                            .map(k => ({name : names[k], score : scores[k]}))
-                            .sort((a,b) => b.score - a.score)
-                            .map((k,i) => `${this.toRank(i+1)}- ${k.name} (${this.toPoints(k.score)})`)
-                        ];
-                        this.sendMessage(palmares.join("\n"), message.threadID);
-                    })
-                    .catch(err => console.error(err));
+        let names = await this.nicknames.getUserNames(message.threadID, Object.keys(scores));
+        let palmares = ["Palmares :", ...
+            Object.keys(names)
+            .map(k => ({name : names[k], score : scores[k]}))
+            .sort((a,b) => b.score - a.score)
+            .map((k,i) => `${this.toRank(i+1)}- ${k.name} (${this.toPoints(k.score)})`)
+        ];
+        await this.sendMessage(palmares.join("\n"), message.threadID);
         return true;
     }
 
-    public stats(message : MessageInfo) : boolean{
+    public async stats(message : MessageInfo) : Promise<boolean>{
         let betState = this.bets[message.threadID];
         if(!betState){
-            this.sendMessage("Les paris n'ont pas commencé", message.threadID);
+            await this.sendMessage("Les paris n'ont pas commencé", message.threadID);
             return false;
         } 
         
         let players = betState.players;
         if(players.length === 0){
-            this.sendMessage("Personne n'a parié", message.threadID);
+            await this.sendMessage("Personne n'a parié", message.threadID);
             return true;
         }
 
@@ -150,16 +149,16 @@ que le paris a bien été pris en compte`;
                 .sort((a,b) => this.distFrom(a.bet, betState.starting) - this.distFrom(b.bet, betState.starting) )
                 .map(p => `${p.name} => ${this.toReadableTime(p.bet)}`)
         ];
-        this.sendMessage(stats.join('\n'), message.threadID);
+        await this.sendMessage(stats.join('\n'), message.threadID);
         return true;
     }
 
-    public finish(message : MessageInfo) : boolean{
+    public async finish(message : MessageInfo) : Promise<boolean>{
         let endTime = new Date();
         let betState = this.bets[message.threadID];
         if(!betState){
-             this.sendMessage("Les paris n'ont pas commencé", message.threadID);
-             return false;
+             await this.sendMessage("Les paris n'ont pas commencé", message.threadID);
+             return true;
         }
 
         let mentions : Mention[] = [];
@@ -181,12 +180,12 @@ que le paris a bien été pris en compte`;
         ];
         this.scores.flush();
 
-        this.sendMessage({body : winners.join('\n'), mentions : mentions}, message.threadID);
+        await this.sendMessage({body : winners.join('\n'), mentions : mentions}, message.threadID);
 
         return (delete this.bets[message.threadID]);
     }
 
-    public doBet(message : MessageInfo) : boolean{
+    public async doBet(message : MessageInfo) : Promise<boolean>{
         let betState = this.bets[message.threadID];
         if(!betState){
             this.sendMessage("Les paris ne sont pas ouverts!", message.threadID);
@@ -216,12 +215,9 @@ que le paris a bien été pris en compte`;
 
         betState.players[senderId] = betState.players[senderId] || {};
         betState.players[senderId].bet = betTime;
-        this.nicknames.getUserName(message.threadID, message.senderID)
-                        .then(s => {
-                            betState.players[senderId].name = s;
-                            this.api.setMessageReaction(Reaction.Like, message.messageID);
-                        })
-                        .catch(ex => console.error(ex));
+        let s =  await this.nicknames.getUserName(message.threadID, message.senderID);
+        betState.players[senderId].name = s;
+        this.api.setMessageReaction(Reaction.Like, message.messageID);
         return true;
     }
 }

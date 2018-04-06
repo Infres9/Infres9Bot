@@ -2,7 +2,7 @@ import {FacebookChatApi, ThreadInfo, MessageInfo, MessageReactionInfo, EventInfo
 
 export default interface Service{
 
-    commands() :{[key : string] : (info : MessageInfo) => boolean};
+    commands() :{[key : string] : (info : MessageInfo) => Promise<boolean>};
 
     reactions(reaction : MessageReactionInfo) : any;
 

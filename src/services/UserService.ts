@@ -44,7 +44,6 @@ export class UserService{
         }
         if(!this.threads[threadID][userId]){//get name
             let userInfo = await this.userInfoPromise(userId);
-            console.log(userInfo);
             this.threads[threadID][userId] = userInfo.name;
         }
         

@@ -38,7 +38,9 @@ function handleMessageSent(message : MessageInfo){
         return;
     }
 
-    return commands[secondWord].call(service, message);
+    return commands[secondWord]
+                .call(service, message)
+                .catch(er => console.error(er));
 }
 
 function handleReactionSent(message : MessageReactionInfo){
