@@ -170,9 +170,18 @@ que le paris a bien été pris en compte`;
                 let data = betState.players[k];
                 let tag = `@${data.name}`;
                 mentions.push({tag : tag, id : k});
-                return {id : k, name : data.name, bet : data.bet, score : this.distFrom(data.bet, endTime)};
+                return {id : k, 
+                        name : data.name,
+                        actionTime : data.actionTime,
+                        bet : data.bet, 
+                        distance : this.distFrom(data.bet, endTime)
+                    };
             })
-            .sort((a,b) => a.score - b.score)
+            .sort((a,b) => {
+                let diff = a.distance - b.distance
+                if(diff != 0)return diff;
+                return a.actionTime > b.actionTime ? 1 : -1;
+            })
             .map((p,i, arr) => {
                 this.scores.incrementscore(message.threadID, p.id, arr.length - i);
                 return `${this.toRank(i+1)}- @${p.name} (${this.toReadableTime(p.bet)}) : ${this.toPoints(arr.length - i)}`
@@ -215,6 +224,7 @@ que le paris a bien été pris en compte`;
 
         betState.players[senderId] = betState.players[senderId] || {};
         betState.players[senderId].bet = betTime;
+        betState.players[senderId].actionTime = new Date();
         let s =  await this.nicknames.getUserName(message.threadID, message.senderID);
         betState.players[senderId].name = s;
         this.api.setMessageReaction(Reaction.Like, message.messageID);
