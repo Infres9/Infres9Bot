@@ -42,6 +42,8 @@ export default class BetService implements Service{
                 "bet" : this.doBet,
                 "scores" : this.palmares,
                 "palmares" : this.palmares,
+                "cancel" : this.cancel,
+                "undo" : this.cancel
             };
     }
 
@@ -82,6 +84,12 @@ export default class BetService implements Service{
 
     private distFrom(dateBase : Date, dateTest : Date) : number{
         return Math.abs(dateBase.getTime() - dateTest.getTime());
+    }
+
+    public async cancel(message : MessageInfo) : Promise<boolean>{
+        delete this.bets[message.threadID];
+        await this.sendMessage("Paris annulé", message.threadID);
+        return true;
     }
 
     public async start(message : MessageInfo) : Promise<boolean>{
