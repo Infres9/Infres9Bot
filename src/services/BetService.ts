@@ -3,6 +3,7 @@ import {Reaction, LogMessateType} from '../Enums'
 import {FacebookChatApi, Mention, SentMessage, EventInfo, MessageReactionInfo, MessageInfo, SentMessageInfo} from '../FacebookChatApi'
 import {ScoreService}  from './ScoreService';
 import {UserService} from './UserService';
+import { toRank, toPoints, toReadableMinutes, toReadableTime, isTime, distBetween, splitTime } from '../Utils';
 
 export default class BetService implements Service{
 
@@ -48,43 +49,10 @@ export default class BetService implements Service{
             };
     }
 
-    private toRank(rank : number) : string{
-        return rank == 1 ? "1er" : rank + "eme";
-    }
-
-    private toPoints(points : number) : string{
-        return points == 1 ? "1 point" : points + " points";
-    }
-
-    private isTime(str : string) : boolean{
-        return /^([01]?[0-9]|2[0-3])h[0-5]?[0-9]$/i.test(str);
-    }
-
-    private static splitTime(str : string) : number[]{
-        return str.split(/h/ig).map(x=>+x);
-    }
-
-    private toReadableMinutes(date : Date) : string{
-        let seconds = date.getSeconds();
-        let secondsStr = seconds < 10 ? "0" + seconds : "" + seconds;
-        return `${date.getMinutes()}:${secondsStr}`;
-    }
-
-    private toReadableTime(date : Date) : string{
-        let minutes : number = date.getMinutes();
-        let seconds = date.getSeconds();
-        let minutesStr = minutes < 10 ? "0" + minutes : "" + minutes;
-        return `${date.getHours()}h${minutesStr}`;
-    }
-
     private sendMessage(str : string|SentMessage, threadId : string) : Promise<SentMessageInfo>{
         return new Promise(solver =>{
             return this.api.sendMessage(str, threadId,(err, info) => solver(info) ); 
         });
-    }
-
-    private distFrom(dateBase : Date, dateTest : Date) : number{
-        return Math.abs(dateBase.getTime() - dateTest.getTime());
     }
 
     public async cancel(message : MessageInfo) : Promise<boolean>{
@@ -133,7 +101,7 @@ que le paris a bien été pris en compte`;
             Object.keys(names)
             .map(k => ({name : names[k], score : scores[k]}))
             .sort((a,b) => b.score - a.score)
-            .map((k,i) => `${this.toRank(i+1)}- ${k.name} (${this.toPoints(k.score)})`)
+            .map((k,i) => `${toRank(i+1)}- ${k.name} (${toPoints(k.score)})`)
         ];
         await this.sendMessage(palmares.join("\n"), message.threadID);
         return true;
@@ -152,11 +120,11 @@ que le paris a bien été pris en compte`;
             return true;
         }
 
-        let stats = ["Statistiques :", ...
+        let stats = [`Statistiques : (${toReadableMinutes(betState.starting)})`, ...
             Object.keys(players)
                 .map(p => ({id : p, name : players[p].name, bet : players[p].bet}))
-                .sort((a,b) => this.distFrom(a.bet, betState.starting) - this.distFrom(b.bet, betState.starting) )
-                .map(p => `${p.name} => ${this.toReadableTime(p.bet)}`)
+                .sort((a,b) => distBetween(a.bet, betState.starting) - distBetween(b.bet, betState.starting) )
+                .map(p => `${p.name} => ${toReadableTime(p.bet)}`)
         ];
         await this.sendMessage(stats.join('\n'), message.threadID);
         return true;
@@ -172,9 +140,9 @@ que le paris a bien été pris en compte`;
 
         let mentions : Mention[] = [];
         let timeGap = new Date(endTime.getTime() - betState.starting.getTime());
-        let formattedTime = this.toReadableMinutes(timeGap);
+        let formattedTime = toReadableMinutes(timeGap);
 
-        let winners = [`Résultats (${this.toReadableTime(betState.starting)}-${this.toReadableTime(endTime)} : ${formattedTime}):`,...        
+        let winners = [`Résultats (${toReadableTime(betState.starting)}-${toReadableTime(endTime)} : ${formattedTime}):`,...        
             Object.keys(betState.players).map(k => {
                 let data = betState.players[k];
                 let tag = `@${data.name}`;
@@ -183,7 +151,7 @@ que le paris a bien été pris en compte`;
                         name : data.name,
                         actionTime : data.actionTime,
                         bet : data.bet, 
-                        distance : this.distFrom(data.bet, endTime)
+                        distance : distBetween(data.bet, endTime)
                     };
             })
             .sort((a,b) => {
@@ -193,7 +161,7 @@ que le paris a bien été pris en compte`;
             })
             .map((p,i, arr) => {
                 this.scores.incrementscore(message.threadID, p.id, arr.length - i);
-                return `${this.toRank(i+1)}- @${p.name} (${this.toReadableTime(p.bet)}) : ${this.toPoints(arr.length - i)}`
+                return `${toRank(i+1)}- @${p.name} (${toReadableTime(p.bet)}) : ${toPoints(arr.length - i)}`
             })
         ];
         this.scores.flush();
@@ -219,8 +187,8 @@ que le paris a bien été pris en compte`;
         if(!bet)return;
 
         let betTime = new Date(betState.starting);
-        if(this.isTime(bet)){
-            let hm = BetService.splitTime(bet);
+        if(isTime(bet)){
+            let hm = splitTime(bet);
             betTime.setHours(hm[0], hm[1], 0, 0);
         }else{
             const numberRegex = /^\d+$/;
