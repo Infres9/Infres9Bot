@@ -8,7 +8,7 @@ interface ThreadScore{
 
 interface ServiceData{
     version : string,
-    threads : ThreadScore
+    threads : ThreadScore,
 }
 
 export class ScoreService{
