@@ -71,7 +71,7 @@ export default class BetService implements Service{
         var time = new Date();
         this.bets[message.threadID] =  {starting : time, players : {}, finished : false};
         
-        await this.sendMessage("Les paris sont ouverts vous avez 2 minutes pour parier !", message.threadID);
+        await this.sendMessage("*Les paris sont ouverts vous avez 2 minutes pour parier !*", message.threadID);
         setTimeout(() => {
             if(this.bets[message.threadID]){
                 this.sendMessage("Fin des paris", message.threadID);
@@ -97,7 +97,7 @@ que le paris a bien été pris en compte`;
         let scores = this.scores.getScores(message.threadID);
 
         let names = await this.nicknames.getUserNames(message.threadID, Object.keys(scores));
-        let palmares = ["Palmares :", ...
+        let palmares = ["*Palmares :*", ...
             Object.keys(names)
             .map(k => ({name : names[k], score : scores[k]}))
             .sort((a,b) => b.score - a.score)
@@ -120,7 +120,7 @@ que le paris a bien été pris en compte`;
             return true;
         }
 
-        let stats = [`Statistiques : (${toReadableMinutes(betState.starting)})`, ...
+        let stats = [`*Statistiques* : (${toReadableTime(betState.starting)})`, ...
             Object.keys(players)
                 .map(p => ({id : p, name : players[p].name, bet : players[p].bet}))
                 .sort((a,b) => distBetween(a.bet, betState.starting) - distBetween(b.bet, betState.starting) )
@@ -131,18 +131,23 @@ que le paris a bien été pris en compte`;
     }
 
     public async finish(message : MessageInfo) : Promise<boolean>{
-        let endTime = new Date();
         let betState = this.bets[message.threadID];
+        delete this.bets[message.threadID];
+        let endTime = new Date();
         if(!betState){
              await this.sendMessage("Les paris n'ont pas commencé", message.threadID);
              return true;
+        }
+        if(!betState.finished){//cancel
+            await this.sendMessage("Paris finis avant la limite de 2 minutes, *annulé*", message.threadID);
+            return true;
         }
 
         let mentions : Mention[] = [];
         let timeGap = new Date(endTime.getTime() - betState.starting.getTime());
         let formattedTime = toReadableMinutes(timeGap);
 
-        let winners = [`Résultats (${toReadableTime(betState.starting)}-${toReadableTime(endTime)} : ${formattedTime}):`,...        
+        let winners = [`*Résultats* (${toReadableTime(betState.starting)}-${toReadableTime(endTime)} : *${formattedTime}*):`,...        
             Object.keys(betState.players).map(k => {
                 let data = betState.players[k];
                 let tag = `@${data.name}`;
@@ -168,7 +173,7 @@ que le paris a bien été pris en compte`;
 
         await this.sendMessage({body : winners.join('\n'), mentions : mentions}, message.threadID);
 
-        return (delete this.bets[message.threadID]);
+        return true;
     }
 
     public async doBet(message : MessageInfo) : Promise<boolean>{
