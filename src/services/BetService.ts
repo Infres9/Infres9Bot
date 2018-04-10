@@ -31,7 +31,8 @@ export default class BetService implements Service{
      * list all the possible function that can be calle
      */
     public commands() : {[key : string] : (info : MessageInfo) => Promise<boolean>}{
-        return {"start" : this.start,
+        return {
+                "start" : this.start,
                 "begin" : this.start,
                 "help" :  this.help,
                 "finish" : this.finish,
@@ -222,9 +223,10 @@ que le paris a bien été pris en compte`;
             let hm = BetService.splitTime(bet);
             betTime.setHours(hm[0], hm[1], 0, 0);
         }else{
+            const numberRegex = /^\d+$/;
             let localTime = Number.parseInt(bet);
-            if(Number.isNaN(localTime) || !Number.isFinite(localTime) || localTime > (60 * 20)){
-                this.sendMessage(`Paris incorrect : ${bet}`, message.threadID);
+            if(!numberRegex.test(bet) || Number.isNaN(localTime) || !Number.isFinite(localTime) || localTime > (60 * 20)){
+                await this.api.setMessageReaction(Reaction.Dislike, message.messageID);
                 return false;
             }
             betTime = new Date(betTime.getTime() + localTime * 60000);

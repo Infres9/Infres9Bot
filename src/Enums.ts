@@ -50,5 +50,5 @@ export enum Reaction{
     Cry = ":cry:",
     Angry = ":angry:",
     Like = ":like:",
-    DisLike = ":dislike:"
+    Dislike = ":dislike:"
 }
