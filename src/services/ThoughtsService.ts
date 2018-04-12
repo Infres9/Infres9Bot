@@ -16,10 +16,9 @@ export default class ThoughtsService implements Service {
         };
     }
     reactions(reaction: MessageReactionInfo) {
-        throw new Error("Method not implemented.");
     }
+    
     events(event: EventInfo) {
-        throw new Error("Method not implemented.");
     }
 
     public async thought(message : MessageInfo): Promise<boolean>{
