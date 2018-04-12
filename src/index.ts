@@ -1,6 +1,7 @@
 
 import * as login from 'facebook-chat-api';
 import BetService from './services/BetService';
+import ThoughtsService from './services/ThoughtsService';
 import Service from './services/Service';
 import {MessageType} from './Enums';
 import {FacebookChatApi, ListenInfo, EventInfo, MessageReactionInfo, MessageInfo} from './FacebookChatApi';
@@ -17,6 +18,7 @@ login({email: process.env.FACEBOOK_MAIL, password: process.env.FACEBOOK_PWD}, (e
 
     api.setOptions({listenEvents : true, selfListen : true});
     services["bet"] = new BetService(api);
+    services["thought"] = new ThoughtsService(api);
     api.listen(receiveMessage);
 });
 
@@ -31,7 +33,6 @@ function handleMessageSent(message : MessageInfo){
     let service = services[firstWord];
     
     let secondWord = splited[1];
-    console.error(secondWord);
     let commands = service.commands();
     if(!secondWord || !commands[secondWord]){
         if(!commands["default"]){
