@@ -34,8 +34,11 @@ function handleMessageSent(message : MessageInfo){
     console.error(secondWord);
     let commands = service.commands();
     if(!secondWord || !commands[secondWord]){
-        console.error("Command not found");
-        return;
+        if(!commands["default"]){
+            console.error("Command not found");
+            return;
+        }
+        secondWord = "default";
     }
 
     return commands[secondWord]

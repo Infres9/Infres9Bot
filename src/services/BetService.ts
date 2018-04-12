@@ -45,7 +45,8 @@ export default class BetService implements Service{
                 "scores" : this.palmares,
                 "palmares" : this.palmares,
                 "cancel" : this.cancel,
-                "undo" : this.cancel
+                "undo" : this.cancel,
+                "default" : this.defaultBet
             };
     }
 
@@ -176,7 +177,15 @@ que le paris a bien été pris en compte`;
         return true;
     }
 
+    public async defaultBet(message : MessageInfo) : Promise<boolean>{
+        return await this.saveBet(message, message.body.split(' ')[1]);
+    }
+
     public async doBet(message : MessageInfo) : Promise<boolean>{
+        return await this.saveBet(message, message.body.split(' ')[2]);
+    }
+
+    private async saveBet(message : MessageInfo, bet : string) : Promise<boolean>{
         let betState = this.bets[message.threadID];
         if(!betState){
             this.sendMessage("Les paris ne sont pas ouverts!", message.threadID);
@@ -188,8 +197,6 @@ que le paris a bien été pris en compte`;
         }
 
         let senderId = message.senderID;
-        let bet = message.body.split(' ')[2];
-        if(!bet)return;
 
         let betTime = new Date(betState.starting);
         if(isTime(bet)){
