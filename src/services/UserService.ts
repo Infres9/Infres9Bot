@@ -16,10 +16,16 @@ export class UserService{
         this.threads = {};
     }
 
-    public async getAllUsersInThread(threadId : string) : Promise<{[key : string] : string}>{
+    public async getAllUsersInThread(threadId : string) : Promise<UserData>{
         if(!this.threads[threadId]){
             let thread = await this.threadInfoPromise(threadId);
             this.threads[threadId] = thread.nicknames;
+            let participants = thread.participantIDs;
+            let noNicknames = participants.filter(x=> !this.threads[threadId][x]);
+            if(noNicknames.length > 0){
+                let userNames = await this.usersInfosPromise(noNicknames);
+                noNicknames.map(id => this.threads[threadId][id] = userNames[id].name);
+            }
         }
         return this.threads[threadId];
     }

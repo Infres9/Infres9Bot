@@ -25,7 +25,7 @@ interface Options{
 
 interface ThreadInfo{
     threadId : number,
-    participantsIDs : string[],
+    participantIDs : string[],
     name : string;
     nicknames : {[key:string] : string}|null,
     unreadCount : number,
