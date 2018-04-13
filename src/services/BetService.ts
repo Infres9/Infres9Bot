@@ -4,18 +4,21 @@ import {FacebookChatApi, Mention, SentMessage, EventInfo, MessageReactionInfo, M
 import {ScoreService}  from './ScoreService';
 import {UserService} from './UserService';
 import { toRank, toPoints, toReadableMinutes, toReadableTime, isTime, distBetween, splitTime } from '../Utils';
+import DayStats from './DayStats';
 
 export default class BetService implements Service{
 
     private bets : {};
     private scores : ScoreService;
     private nicknames : UserService
+    private daystats : DayStats;
 
     constructor(private api : FacebookChatApi){
         this.bets = {};
         this.api = api;
         this.scores = new ScoreService();
         this.nicknames = new UserService(api);
+        this.daystats = new DayStats();
     }
     
     public events(event : EventInfo) : any{
@@ -46,7 +49,8 @@ export default class BetService implements Service{
                 "palmares" : this.palmares,
                 "cancel" : this.cancel,
                 "undo" : this.cancel,
-                "default" : this.defaultBet
+                "default" : this.defaultBet,
+                "total" : this.dayStats
             };
     }
 
@@ -54,6 +58,12 @@ export default class BetService implements Service{
         return new Promise(solver =>{
             return this.api.sendMessage(str, threadId,(err, info) => solver(info) ); 
         });
+    }
+
+    public async dayStats(message : MessageInfo) : Promise<boolean>{
+        let totalTime = this.daystats.getTodaysTime(message.threadID);
+        await this.sendMessage(`*Temps total : ${toReadableMinutes(totalTime)}*`, message.threadID);
+        return true;
     }
 
     public async cancel(message : MessageInfo) : Promise<boolean>{
@@ -182,6 +192,7 @@ que le paris a bien été pris en compte`;
                 return `${toRank(i+1)}- @${p.name} (${toReadableTime(p.bet)}) : ${toPoints(arr.length - i)}`
             })
         ];
+        this.daystats.addTime(message.threadID, timeGap);
         this.scores.flush();
 
         await this.sendMessage({body : winners.join('\n'), mentions : mentions}, message.threadID);

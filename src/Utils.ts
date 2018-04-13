@@ -1,24 +1,25 @@
 
 
+function pad(val : number) : string{
+    return val < 10 ? "0" + val : "" + val;
+}
+
 /**
- * Turns a date from a date object to 'HH:mm'
+ * Turns a date from a date object to 'HH:mm:ss' or 'mm:ss'
+ * depending on if there is more than one hour to display
  * @param date the date to translate
  */ 
 export function toReadableMinutes(date : Date) : string{
-    let seconds = date.getSeconds();
-    let secondsStr = seconds < 10 ? "0" + seconds : "" + seconds;
-    return `${date.getMinutes()}:${secondsStr}`;
-}
+    return  date.getHours() > 1 ? `${date.getHours()}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`:
+                                 `${date.getMinutes()}:${pad(date.getSeconds())}`;
+}1
 
 /**
  * turns a date object to readable minutes (mm:ss)
  * @param date the date to translate
  */
 export function toReadableTime(date : Date) : string{
-    let minutes : number = date.getMinutes();
-    let seconds = date.getSeconds();
-    let minutesStr = minutes < 10 ? "0" + minutes : "" + minutes;
-    return `${date.getHours()}h${minutesStr}`;
+    return `${date.getHours()}h${pad(date.getMinutes())}`;
 }
 
 /**
