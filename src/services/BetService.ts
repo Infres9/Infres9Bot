@@ -72,7 +72,19 @@ export default class BetService implements Service{
         var time = new Date();
         this.bets[message.threadID] =  {starting : time, players : {}, finished : false};
         
-        await this.sendMessage("*Les paris sont ouverts vous avez 2 minutes pour parier !*", message.threadID);
+        //Notify everyone
+        let users = await this.nicknames.getAllUsersInThread(message.threadID);
+        let response = '(';
+        let mentions : Mention[] = [];
+        Object.keys(users).map(k => {
+            let tag = '@' + users[k];
+            mentions.push({tag : tag, id : k});
+            response += tag + ' ';
+        });
+        response += ') *Les paris sont ouverts vous avez 2 minutes pour parier !*';
+
+
+        await this.sendMessage({body : response, mentions : mentions}, message.threadID);
         setTimeout(() => {
             if(this.bets[message.threadID]){
                 this.sendMessage("Fin des paris", message.threadID);

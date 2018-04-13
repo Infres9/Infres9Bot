@@ -16,6 +16,14 @@ export class UserService{
         this.threads = {};
     }
 
+    public async getAllUsersInThread(threadId : string) : Promise<{[key : string] : string}>{
+        if(!this.threads[threadId]){
+            let thread = await this.threadInfoPromise(threadId);
+            this.threads[threadId] = thread.nicknames;
+        }
+        return this.threads[threadId];
+    }
+
     public updateUserNickname(threadID : string, userId : string, nwNickname : string){
         if(!this.threads[threadID])this.threads[threadID] = {};
         this.threads[threadID][userId] = nwNickname;
