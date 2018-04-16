@@ -1,76 +1,37 @@
 
 import * as login from 'facebook-chat-api';
-import BetService from './services/BetService';
-import ThoughtsService from './services/ThoughtsService';
-import Service from './services/Service';
+import * as path from 'path';
 import {MessageType} from './Enums';
-import {FacebookChatApi, ListenInfo, EventInfo, MessageReactionInfo, MessageInfo} from './FacebookChatApi';
+import Messenger from './Messenger';
 
-const services : {[key : string] : Service}  = {};
+//Express part
+import * as express from 'express';
+import * as http from 'http';
 
-if(!process.env.FACEBOOK_MAIL || !process.env.FACEBOOK_PWD){
-    console.error("Please, set FACEBOOK_MAIL && FACEBOOK_PWD environment variables");
-    process.exit(-1);
-}
+const publicDir =  __dirname + '/../front/dist';
+const app = express();
+const msg = new Messenger(login);
 
-login({email: process.env.FACEBOOK_MAIL, password: process.env.FACEBOOK_PWD}, (err,api : FacebookChatApi) => {
-    if(err) return console.error(err);
-
-    api.setOptions({listenEvents : true, selfListen : true});
-    services["bet"] = new BetService(api);
-    services["thought"] = new ThoughtsService(api);
-    api.listen(receiveMessage);
+app.get('/', (req, res )=> {
+    res.sendFile(path.join(publicDir, 'index.html'));
+});
+app.use(express.static(publicDir));
+app.post('/bot/restart',  (req, res, next) => {
+    msg.reload()
+        .then(() => {
+            res.send({'success' : true});
+        })
+        .catch((err) => {
+            res.send({'sucess' : false, err: err});
+        });
 });
 
+app.use((req,res, next)=>{
+    next();
+});
 
-function handleMessageSent(message : MessageInfo){
-    let cleaned = message.body.replace(/\s+/g,' ');
-    let splited = cleaned.split(' ');
-    let firstChar = cleaned[0];
-    if(firstChar !== '/')return;
-    let firstWord = splited[0].substr(1);
-    if(!services[firstWord])return;
-    let service = services[firstWord];
-    
-    let secondWord = splited[1];
-    let commands = service.commands();
-    if(!secondWord || !commands[secondWord]){
-        if(!commands["default"]){
-            console.error("Command not found");
-            return;
-        }
-        secondWord = "default";
-    }
-
-    return commands[secondWord]
-                .call(service, message)
-                .catch(er => console.error(er));
-}
-
-function handleReactionSent(message : MessageReactionInfo){
-    Object.keys(services).map(k => services[k].reactions(message));
-
-}
-
-function handleEvent(message : EventInfo){
-    Object.keys(services).map(k => services[k].events(message));
-}
-
-function receiveMessage(err, message : ListenInfo){
-    if(err)return console.error(err);
-    
-    try{
-        switch(message.type){
-            case MessageType.Message : return handleMessageSent(message);
-            case MessageType.MessageReaction : return handleReactionSent(message);
-            case MessageType.Event : return handleEvent(message);
-            default:break;
-        }
-    }catch(ex){
-        console.error("Failed to execute command " + message.type);
-        if(message.type == MessageType.Message){
-            console.error(message.body);
-        }
-        console.error(ex);
-    }
-}
+const server = http.createServer(app);
+server.listen(3000);
+server.on('listening', () => {
+    console.log('listening !');
+})

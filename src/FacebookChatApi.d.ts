@@ -239,7 +239,7 @@ interface FacebookChatApi{
 
     listen(callback : (err, info : ListenInfo) => void);
 
-    logout(callack : (err) => void);
+    logout(callack? : (err) => void);
 
     markAsRead(threadID : string, callback? : (err) => void);
 

@@ -8,8 +8,8 @@
       "root": "front/src",
       "outDir": "front/dist",
       "assets": [
-        "front/assets",
-        "front/favicon.ico"
+        "assets",
+        "favicon.ico"
       ],
       "index": "index.html",
       "main": "main.ts",
