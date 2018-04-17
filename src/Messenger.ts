@@ -27,7 +27,7 @@ export default class Messenger{
             api.setOptions({listenEvents : true, selfListen : true});
             this.services["bet"] = new BetService(api);
             this.services["thought"] = new ThoughtsService(api);
-            api.listen(this.receiveMessage);
+            api.listen(this.receiveMessage.bind(this));
         });
     }
 
