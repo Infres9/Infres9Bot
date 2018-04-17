@@ -1,6 +1,5 @@
 import Service from './Service';
 import {Reaction, LogMessateType} from '../Enums'
-import {FacebookChatApi, Mention, SentMessage, EventInfo, MessageReactionInfo, MessageInfo, SentMessageInfo} from '../FacebookChatApi'
 import {ScoreService}  from './ScoreService';
 import {UserService} from './UserService';
 import { toRank, toPoints, toReadableMinutes, toReadableTime, isTime, distBetween, splitTime } from '../Utils';

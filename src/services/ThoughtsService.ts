@@ -1,5 +1,4 @@
 import Service from "./Service";
-import { MessageReactionInfo, EventInfo, MessageInfo, FacebookChatApi } from "../FacebookChatApi";
 import { IncomingMessage } from "http";
 import { get } from "https";
 

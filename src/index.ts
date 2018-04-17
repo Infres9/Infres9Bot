@@ -1,4 +1,6 @@
 
+//<reference=path="types/FacebookChatApi.d.ts">
+
 import * as login from 'facebook-chat-api';
 import * as path from 'path';
 import {MessageType} from './Enums';
@@ -8,7 +10,7 @@ import Messenger from './Messenger';
 import * as express from 'express';
 import * as http from 'http';
 
-const publicDir =  __dirname + '/../front/dist';
+const publicDir = path.join(__dirname, '../front/dist');
 const app = express();
 const msg = new Messenger(login);
 

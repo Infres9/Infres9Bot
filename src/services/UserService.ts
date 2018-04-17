@@ -1,4 +1,3 @@
-import {FacebookChatApi, ThreadInfo, UserInfo} from '../FacebookChatApi'
 
 interface UserData{
     [key : string] : string

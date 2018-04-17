@@ -1,4 +1,3 @@
-import {FacebookChatApi, ThreadInfo, MessageInfo, MessageReactionInfo, EventInfo} from '../FacebookChatApi'
 
 export default interface Service{
 

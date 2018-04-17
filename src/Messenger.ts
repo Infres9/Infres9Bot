@@ -1,7 +1,6 @@
 import Service from './services/Service';
 import BetService from './services/BetService';
 import ThoughtsService from './services/ThoughtsService';
-import { FacebookChatApi, ListenInfo, MessageInfo, EventInfo, MessageReactionInfo } from './FacebookChatApi';
 import { MessageType } from './Enums';
 
 export default class Messenger{
@@ -41,7 +40,6 @@ export default class Messenger{
         );
         this.services = {};
         this.login();
-
     }
 
     private receiveMessage(err, message : ListenInfo){
