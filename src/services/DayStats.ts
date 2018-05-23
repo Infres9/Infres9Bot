@@ -1,6 +1,3 @@
-import { currentId } from "async_hooks";
-
-
 export default class DayStats {
 
     private stats  : {
